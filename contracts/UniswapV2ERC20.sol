@@ -9,7 +9,7 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
     string public constant name = 'Uniswap V2';
     string public constant symbol = 'UNI-V2';
     uint8 public constant decimals = 18;
-    uint  public totalSupply;
+    uint public totalSupply;
     mapping(address => uint) public balanceOf;
     mapping(address => mapping(address => uint)) public allowance;
 
@@ -21,11 +21,21 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
     event Approval(address indexed owner, address indexed spender, uint value);
     event Transfer(address indexed from, address indexed to, uint value);
 
+    /**
+     * @dev Sets the values for {name}, {symbol}, {decimals} and {totalSupply}.
+     *
+     * The default value of {decimals} is 18, please do not change this.
+     *
+     * All three of these values are immutable: they can only be set once during
+     * construction.
+     */
     constructor() public {
         uint chainId;
+
         assembly {
             chainId := chainid
         }
+
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),

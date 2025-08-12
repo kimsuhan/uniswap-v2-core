@@ -109,18 +109,6 @@ describe('UniswapV2Pair', () => {
    * 스왑 테스트
    *
    */
-  const swapTestCases: [number, number, number, bigint][] = [
-    [1, 5, 10, 1662497915624478906n],
-    [1, 10, 5, 453305446940074565n],
-
-    [2, 5, 10, 2851015155847869602n],
-    [2, 10, 5, 831248957812239453n],
-
-    [1, 10, 10, 906610893880149131n],
-    [1, 100, 100, 987158034397061298n],
-    [1, 1000, 1000, 996006981039903216n],
-  ]
-
   const swapTestCase: {
     swapAmount: string // 스왑할 토큰 A 양
     tokenAAmount: string // 최초 유동성 풀에 넣을 토큰 0 양
@@ -160,21 +148,49 @@ describe('UniswapV2Pair', () => {
     })
   })
 
-  // const optimisticTestCases: bigint[][] = [
-  //   ['997000000000000000', 5, 10, 1], // given amountIn, amountOut = floor(amountIn * .997)
-  //   ['997000000000000000', 10, 5, 1],
-  //   ['997000000000000000', 5, 5, 1],
-  //   [1, 5, 5, '1003009027081243732'], // given amountOut, amountIn = ceiling(amountOut / .997)
-  // ].map((a) => a.map((n) => (typeof n === 'string' ? BigInt(n) : BigInt(ethers.parseEther(String(n))))))
-  // optimisticTestCases.forEach((optimisticTestCase, i) => {
-  //   it(`optimistic:${i}`, async () => {
-  //     const [outputAmount, tokenAAmount, tokenBAmount, inputAmount] = optimisticTestCase
-  //     await addLiquidity(tokenAAmount, tokenBAmount)
-  //     await tokenA.transfer(pairAddress, inputAmount)
-  //     await expect(pair.swap(outputAmount + 1n, 0, owner.address, '0x', overrides)).to.be.revertedWith('UniswapV2: K')
-  //     await pair.swap(outputAmount, 0, owner.address, '0x', overrides)
-  //   })
-  // })
+  const optimisticTestCases: bigint[][] = [
+    ['997000000000000000', 5, 10, 1], // given amountIn, amountOut = floor(amountIn * .997)
+    ['997000000000000000', 10, 5, 1],
+    ['997000000000000000', 5, 5, 1],
+    [1, 5, 5, '1003009027081243732'], // given amountOut, amountIn = ceiling(amountOut / .997)
+  ].map((a) => a.map((n) => (typeof n === 'string' ? BigInt(n) : BigInt(ethers.parseEther(String(n))))))
+
+  optimisticTestCases.forEach((optimisticTestCase, i) => {
+    it(`optimistic:${i}`, async () => {
+      const [outputAmount, tokenAAmount, tokenBAmount, inputAmount] = optimisticTestCase
+      await addLiquidity(tokenAAmount, tokenBAmount)
+      await tokenA.transfer(pairAddress, inputAmount)
+      await expect(pair.swap(outputAmount + 1n, 0, owner.address, '0x', overrides)).to.be.revertedWith('UniswapV2: K')
+      await pair.swap(outputAmount, 0, owner.address, '0x', overrides)
+    })
+  })
+
+  it('swap:token0', async () => {
+    const tokenAAmount = BigInt(ethers.parseEther('5'))
+    const tokenBAmount = BigInt(ethers.parseEther('10'))
+    await addLiquidity(tokenAAmount, tokenBAmount)
+
+    const swapAmount = BigInt(ethers.parseEther('1'))
+    const expectedOutputAmount = BigInt('1662497915624478906')
+    await tokenA.transfer(pairAddress, swapAmount)
+    await expect(pair.swap(0, expectedOutputAmount, owner.address, '0x', overrides))
+      .to.emit(tokenB, 'Transfer')
+      .withArgs(pairAddress, owner.address, expectedOutputAmount)
+      .to.emit(pair, 'Sync')
+      .withArgs(tokenAAmount + swapAmount, tokenBAmount - expectedOutputAmount)
+      .to.emit(pair, 'Swap')
+      .withArgs(owner.address, swapAmount, 0, 0, expectedOutputAmount, owner.address)
+
+    const reserves = await pair.getReserves()
+    expect(reserves[0]).to.eq(tokenAAmount + swapAmount)
+    expect(reserves[1]).to.eq(tokenBAmount - expectedOutputAmount)
+    expect(await tokenA.balanceOf(pairAddress)).to.eq(tokenAAmount + swapAmount)
+    expect(await tokenB.balanceOf(pairAddress)).to.eq(tokenBAmount - expectedOutputAmount)
+    const totalSupplyTokenA = await tokenA.totalSupply()
+    const totalSupplyTokenB = await tokenB.totalSupply()
+    expect(await tokenA.balanceOf(owner.address)).to.eq(totalSupplyTokenA - tokenAAmount - swapAmount)
+    expect(await tokenB.balanceOf(owner.address)).to.eq(totalSupplyTokenB - tokenBAmount + expectedOutputAmount)
+  })
 
   // it('swap:token0', async () => {
   //   const token0Amount = expandTo18Decimals(5)

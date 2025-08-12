@@ -8,8 +8,8 @@ const config: HardhatUserConfig = {
     hardhat: {
       gas: 'auto',
       mining: {
-        auto: false,
-        interval: 5000,
+        auto: true,
+        interval: 1000,
       },
     },
     localhost: {

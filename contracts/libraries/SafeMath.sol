@@ -3,6 +3,8 @@ pragma solidity ^0.8.28;
 
 // a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
 
+import 'hardhat/console.sol';
+
 library SafeMath {
     /**
      * @notice 덧셈 계산

@@ -31,7 +31,7 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
         uint chainId;
 
         // assembly {
-        //     chainId := chainid
+        //     chainId := chainid()
         // }
 
         DOMAIN_SEPARATOR = keccak256(

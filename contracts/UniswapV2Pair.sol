@@ -9,7 +9,7 @@ import './interfaces/IERC20.sol';
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Callee.sol';
 
-contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
+contract UniswapV2Pair is UniswapV2ERC20 {
     using SafeMath for uint;
     using UQ112x112 for uint224;
 
@@ -49,6 +49,18 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     /// @dev {변수} 컨트랙 잠금 상태
     uint private unlocked = 1;
 
+    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
     /**
      * @notice 컨트랙이 잠겨있는지 아닌지 확인하는 modifier
      * @dev 들어와서 잠겨있지 않다면 잠금 상태로 변경하고 함수 실행 후 다시 잠금 해제 (아마 중복 실행 방지를 위해 사용되지 않을까 싶다)
@@ -79,30 +91,11 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
         require(success && (data.length == 0 || abi.decode(data, (bool))), 'UniswapV2: TRANSFER_FAILED');
     }
 
-    /// @dev {이벤트} 민팅?
-    event Mint(address indexed sender, uint amount0, uint amount1);
-
-    /// @dev {이벤트} 소각일거고
-    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
-
-    /// @dev {이벤트} 스왑
-    event Swap(
-        address indexed sender,
-        uint amount0In,
-        uint amount1In,
-        uint amount0Out,
-        uint amount1Out,
-        address indexed to
-    );
-
-    /// @dev {이벤트} 동기화?
-    event Sync(uint112 reserve0, uint112 reserve1);
-
     /**
      * @notice 생성자
      * @dev 팩토리 주소를 설정 (팩토리 패턴에 의해서 컨트랙에서 배포되기때문에 msg.sender는 팩토리 주소가 됨)
      */
-    constructor() public {
+    constructor() {
         factory = msg.sender;
     }
 
@@ -120,7 +113,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
 
     // update reserves and, on the first call per block, price accumulators
     function _update(uint balance0, uint balance1, uint112 _reserve0, uint112 _reserve1) private {
-        require(balance0 <= uint112(-1) && balance1 <= uint112(-1), 'UniswapV2: OVERFLOW');
+        require(balance0 < 0 && balance1 < 0, 'UniswapV2: OVERFLOW');
         uint32 blockTimestamp = uint32(block.timestamp % 2 ** 32);
         uint32 timeElapsed = blockTimestamp - blockTimestampLast; // overflow is desired
         if (timeElapsed > 0 && _reserve0 != 0 && _reserve1 != 0) {

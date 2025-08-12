@@ -30,6 +30,7 @@
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "dotenv": "^17.2.1",
     "hardhat": "^2.26.2"
   },
   "devDependencies": {

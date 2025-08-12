@@ -23,15 +23,12 @@ contract UniswapV2Factory is IUniswapV2Factory {
     /// @dev {변수} 모든 토큰 쌍
     address[] public allPairs;
 
-    /// @dev {이벤트} 토큰 쌍 생성 이벤트
-    event PairCreated(address indexed token0, address indexed token1, address pair, uint);
-
     /**
      * @notice 생성자로 수수료 수령자 설정
      * @param _feeToSetter 수수료 수령자 설정자
      * @dev 아마도 수수료 발생 시 수수료를 소각하는게 아닌 수령자에게 전달하기 위한 용도 같음
      */
-    constructor(address _feeToSetter) public {
+    constructor(address _feeToSetter) {
         feeToSetter = _feeToSetter;
     }
 
@@ -69,7 +66,7 @@ contract UniswapV2Factory is IUniswapV2Factory {
         /// @dev 솔리디티 배포 코드 생성 (고유한 솔트 생성)
         bytes32 salt = keccak256(abi.encodePacked(token0, token1));
 
-        /// @dev 솔리디티 배포 코드 생성 (create2 사용)
+        //솔리디티 배포 코드 생성 (create2 사용)
         assembly {
             // 생성자에게 보낼 이더 양 = 0
             // 솔리디티 배포 코드 시작 주소 = bytecode 주소 + 32 (솔리디티 배포 코드 시작 주소 건너뛰기)

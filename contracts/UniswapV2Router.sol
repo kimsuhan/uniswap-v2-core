@@ -9,6 +9,7 @@ import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 import './interfaces/IUniswapV2Factory.sol';
 import './interfaces/IUniswapV2Pair.sol';
+import 'hardhat/console.sol';
 
 contract UniswapV2Router is IUniswapV2Router {
     using SafeMath for uint;
@@ -96,6 +97,13 @@ contract UniswapV2Router is IUniswapV2Router {
         else {
             //
             uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);
+
+            // console.log('amountADesired', amountADesired);
+            // console.log('reserveA', reserveA);
+            // console.log('reserveB', reserveB);
+            console.log('amountBDesired', amountBDesired);
+            console.log('amountBOptimal', amountBOptimal);
+
             if (amountBOptimal <= amountBDesired) {
                 require(amountBOptimal >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
                 (amountA, amountB) = (amountADesired, amountBOptimal);
@@ -134,23 +142,26 @@ contract UniswapV2Router is IUniswapV2Router {
     // }
 
     // // **** REMOVE LIQUIDITY ****
-    // function removeLiquidity(
-    //     address tokenA,
-    //     address tokenB,
-    //     uint liquidity,
-    //     uint amountAMin,
-    //     uint amountBMin,
-    //     address to,
-    //     uint deadline
-    // ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
-    //     address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
-    //     IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-    //     (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
-    //     (address token0, ) = UniswapV2Library.sortTokens(tokenA, tokenB);
-    //     (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
-    //     require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
-    //     require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
-    // }
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external virtual override ensure(deadline) returns (uint amountA, uint amountB) {
+        address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB); // 풀 주소 조회
+        IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // 유동성 토큰을 풀에 전송
+
+        (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to); // 풀에서 유동성 토큰을 소각
+        (address token0, ) = UniswapV2Library.sortTokens(tokenA, tokenB); // 토큰 순서 정렬
+
+        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+        require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
+    }
+
     // function removeLiquidityETH(
     //     address token,
     //     uint liquidity,

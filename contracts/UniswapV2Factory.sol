@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import './interfaces/IUniswapV2Factory.sol';
 import './UniswapV2Pair.sol';
+import 'hardhat/console.sol';
 
 /**
  * @title UniswapV2Factory
